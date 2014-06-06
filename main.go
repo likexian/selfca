@@ -1,3 +1,22 @@
+/*
+ * Copyright 2014 Li Kexian
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Go module for Self-Signed Certificate Generating
+ * https://www.likexian.com/
+ */
+
 package main
 
 import (
@@ -14,6 +33,16 @@ import (
 	"strings"
 	"time"
 )
+
+// Certificate stors certificate information for generating
+type Certificate struct {
+	isCa          bool
+	domains       []string
+	caKey         *rsa.PrivateKey
+	caCertificate *x509.Certificate
+	notBefore     time.Time
+	notAfter      time.Time
+}
 
 func main() {
 	domain := flag.String("domain", "", "Domains or IPs of the certificate, comma separated")
@@ -40,117 +69,113 @@ func main() {
 
 	notAfter := notBefore.Add(*duration)
 
-	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	certificate, key, err := GenerateCertificate(Certificate{isCa: true, notBefore: notBefore, notAfter: notAfter})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to generate ca key: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to generate ca certificate: %v\n", err)
 		os.Exit(1)
 	}
 
-	err = writeKey("ca.key", caKey)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to write ca key: %v\n", err)
-		os.Exit(1)
-	}
-
-	serialNumberMax := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, err := rand.Int(rand.Reader, serialNumberMax)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to generate serial number: %v\n", err)
-		os.Exit(1)
-	}
-
-	caTemplate := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			CommonName:    "Root CA",
-			Organization:  []string{"Example, INC."},
-			Country:       []string{""},
-			Province:      []string{""},
-			Locality:      []string{""},
-			StreetAddress: []string{""},
-			PostalCode:    []string{""},
-		},
-		NotBefore:             notBefore,
-		NotAfter:              notAfter,
-		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-	}
-
-	derBytes, err := x509.CreateCertificate(rand.Reader, &caTemplate, &caTemplate, &caKey.PublicKey, caKey)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create ca certificate: %v\n", err)
-		os.Exit(1)
-	}
-
-	err = writeCert("ca.crt", derBytes)
+	err = writeCertificate("ca", certificate, key)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to write ca certificate: %v\n", err)
 		os.Exit(1)
 	}
 
-	domainKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to generate domain key: %v\n", err)
-		os.Exit(1)
-	}
-
-	err = writeKey("domain.key", domainKey)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to write domain key: %v\n", err)
-		os.Exit(1)
-	}
-
-	serialNumber, err = rand.Int(rand.Reader, serialNumberMax)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to generate serial number: %v\n", err)
-		os.Exit(1)
-	}
-
-	domainTemplate := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			CommonName:    "www.example.com",
-			Organization:  []string{"Example, INC."},
-			Country:       []string{""},
-			Province:      []string{""},
-			Locality:      []string{""},
-			StreetAddress: []string{""},
-			PostalCode:    []string{""},
-		},
-		NotBefore:             notBefore,
-		NotAfter:              notAfter,
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
-		BasicConstraintsValid: true,
-		IsCA:                  false,
-	}
-
-	for _, domain := range strings.Split(*domain, ",") {
-		if ip := net.ParseIP(domain); ip != nil {
-			domainTemplate.IPAddresses = append(domainTemplate.IPAddresses, ip)
-		} else {
-			domainTemplate.DNSNames = append(domainTemplate.DNSNames, domain)
+	var domains []string
+	for _, v := range strings.Split(*domain, ",") {
+		v = strings.TrimSpace(v)
+		if v != "" {
+			domains = append(domains, v)
 		}
 	}
 
-	derBytes, err = x509.CreateCertificate(rand.Reader, &domainTemplate, &caTemplate, &domainKey.PublicKey, caKey)
+	caCertificate, err := x509.ParseCertificates(certificate)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create domain certificate: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to parse ca certificate: %v\n", err)
 		os.Exit(1)
 	}
 
-	err = writeCert("domain.crt", derBytes)
+	certificate, key, err = GenerateCertificate(Certificate{isCa: false, domains: domains, caKey: key, caCertificate: caCertificate[0], notBefore: notBefore, notAfter: notAfter})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to generate domain certificate: %v\n", err)
+		os.Exit(1)
+	}
+
+	err = writeCertificate("domain", certificate, key)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to write domain certificate: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-// writeKey writes a PEM serialization key to file
-func writeKey(filename string, key *rsa.PrivateKey) error {
-	fd, err := os.Create(filename)
+// GenerateCertificate generates X.509 certificate and key
+func GenerateCertificate(c Certificate) ([]byte, *rsa.PrivateKey, error) {
+	serialNumberMax := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberMax)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	template := x509.Certificate{
+		SerialNumber:          serialNumber,
+		Subject:               pkix.Name{},
+		NotBefore:             c.notBefore,
+		NotAfter:              c.notAfter,
+		IsCA:                  c.isCa,
+		BasicConstraintsValid: true,
+	}
+
+	if c.isCa {
+		template.Subject.CommonName = "Root CA"
+		template.KeyUsage = x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature
+		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
+		c.caKey = key
+		c.caCertificate = &template
+	} else {
+		if len(c.domains) > 0 {
+			template.Subject.CommonName = c.domains[0]
+		}
+		template.KeyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
+		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
+	}
+
+	for _, v := range c.domains {
+		if ip := net.ParseIP(v); ip != nil {
+			template.IPAddresses = append(template.IPAddresses, ip)
+		} else {
+			template.DNSNames = append(template.DNSNames, v)
+		}
+	}
+
+	certificate, err := x509.CreateCertificate(rand.Reader, &template, c.caCertificate, &key.PublicKey, c.caKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return certificate, key, nil
+}
+
+// writeCertificate writes certificate and key to files
+func writeCertificate(name string, certificate []byte, key *rsa.PrivateKey) error {
+	certificateName := fmt.Sprintf("%s.crt", name)
+	fd, err := os.Create(certificateName)
+	if err != nil {
+		return err
+	}
+
+	err = pem.Encode(fd, &pem.Block{Type: "CERTIFICATE", Bytes: certificate})
+	if err != nil {
+		return err
+	}
+	fd.Close()
+
+	keyName := fmt.Sprintf("%s.key", name)
+	fd, err = os.Create(keyName)
 	if err != nil {
 		return err
 	}
@@ -159,21 +184,7 @@ func writeKey(filename string, key *rsa.PrivateKey) error {
 	if err != nil {
 		return err
 	}
+	fd.Close()
 
-	return fd.Close()
-}
-
-// writeCert writes a certificate to file
-func writeCert(filename string, derBytes []byte) error {
-	fd, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-
-	err = pem.Encode(fd, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	if err != nil {
-		return err
-	}
-
-	return fd.Close()
+	return nil
 }
