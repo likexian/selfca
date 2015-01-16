@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Li Kexian
+ * Copyright 2014-2015 Li Kexian
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ type Certificate struct {
 func main() {
 	domain := flag.String("domain", "", "Domains or IPs of the certificate, comma separated")
 	start := flag.String("start", "", "Valid from of the certificate, formatted as 2006-01-02 15:04:05 (default now)")
-	duration := flag.Duration("duration", 365*24*time.Hour, "Valid duration of the certificate, for example 24h (default 1year)")
+	days := flag.Int("days", 365, "Valid days of the certificate, for example 365 (default 365 days)")
 	flag.Parse()
 
 	if len(*domain) == 0 {
@@ -67,7 +67,7 @@ func main() {
 		}
 	}
 
-	notAfter := notBefore.Add(*duration)
+	notAfter := notBefore.Add(time.Duration(*days) * 24 * time.Hour)
 
 	certificate, key, err := GenerateCertificate(Certificate{isCa: true, notBefore: notBefore, notAfter: notAfter})
 	if err != nil {
@@ -132,7 +132,7 @@ func GenerateCertificate(c Certificate) ([]byte, *rsa.PrivateKey, error) {
 
 	if c.isCa {
 		template.Subject.CommonName = "Root CA"
-		template.KeyUsage = x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature
+		template.KeyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign
 		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
 		c.caKey = key
 		c.caCertificate = &template
