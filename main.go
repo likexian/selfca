@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2015 Li Kexian
+ * Copyright 2014-2016 Li Kexian
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import (
 // Certificate stors certificate information for generating
 type Certificate struct {
 	isCa          bool
-	domains       []string
+	hosts         []string
 	caKey         *rsa.PrivateKey
 	caCertificate *x509.Certificate
 	notBefore     time.Time
@@ -45,13 +45,13 @@ type Certificate struct {
 }
 
 func main() {
-	domain := flag.String("domain", "", "Domains or IPs of the certificate, comma separated")
-	start := flag.String("start", "", "Valid from of the certificate, formatted as 2006-01-02 15:04:05 (default now)")
-	days := flag.Int("days", 365, "Valid days of the certificate, for example 365 (default 365 days)")
+	host := flag.String("h", "", "Domains or IPs of the certificate, comma separated")
+	start := flag.String("s", "", "Valid from of the certificate, formatted as 2006-01-02 15:04:05 (default now)")
+	days := flag.Int("d", 365, "Valid days of the certificate, for example 365 (default 365 days)")
 	flag.Parse()
 
-	if len(*domain) == 0 {
-		fmt.Fprintf(os.Stderr, "The domain parameter is required\n")
+	if len(*host) == 0 {
+		fmt.Fprintf(os.Stderr, "The host parameter is required\n")
 		os.Exit(1)
 	}
 
@@ -75,17 +75,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = writeCertificate("ca", certificate, key)
+	err = WriteCertificate("ca", certificate, key)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to write ca certificate: %v\n", err)
 		os.Exit(1)
 	}
 
-	var domains []string
-	for _, v := range strings.Split(*domain, ",") {
+	var hosts []string
+	for _, v := range strings.Split(*host, ",") {
 		v = strings.TrimSpace(v)
 		if v != "" {
-			domains = append(domains, v)
+			hosts = append(hosts, v)
 		}
 	}
 
@@ -95,15 +95,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	certificate, key, err = GenerateCertificate(Certificate{isCa: false, domains: domains, caKey: key, caCertificate: caCertificate[0], notBefore: notBefore, notAfter: notAfter})
+	certificate, key, err = GenerateCertificate(Certificate{isCa: false, hosts: hosts, caKey: key, caCertificate: caCertificate[0], notBefore: notBefore, notAfter: notAfter})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to generate domain certificate: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to generate host certificate: %v\n", err)
 		os.Exit(1)
 	}
 
-	err = writeCertificate("domain", certificate, key)
+	err = WriteCertificate("host", certificate, key)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to write domain certificate: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to write host certificate: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -137,14 +137,14 @@ func GenerateCertificate(c Certificate) ([]byte, *rsa.PrivateKey, error) {
 		c.caKey = key
 		c.caCertificate = &template
 	} else {
-		if len(c.domains) > 0 {
-			template.Subject.CommonName = c.domains[0]
+		if len(c.hosts) > 0 {
+			template.Subject.CommonName = c.hosts[0]
 		}
 		template.KeyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
 		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
 	}
 
-	for _, v := range c.domains {
+	for _, v := range c.hosts {
 		if ip := net.ParseIP(v); ip != nil {
 			template.IPAddresses = append(template.IPAddresses, ip)
 		} else {
@@ -160,8 +160,8 @@ func GenerateCertificate(c Certificate) ([]byte, *rsa.PrivateKey, error) {
 	return certificate, key, nil
 }
 
-// writeCertificate writes certificate and key to files
-func writeCertificate(name string, certificate []byte, key *rsa.PrivateKey) error {
+// WriteCertificate writes certificate and key to files
+func WriteCertificate(name string, certificate []byte, key *rsa.PrivateKey) error {
 	certificateName := fmt.Sprintf("%s.crt", name)
 	fd, err := os.Create(certificateName)
 	if err != nil {
