@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 Li Kexian
+ * Copyright 2014-2017 Li Kexian
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,19 @@ func main() {
 	host := flag.String("h", "", "Domains or IPs of the certificate, comma separated")
 	start := flag.String("s", "", "Valid from of the certificate, formatted as 2006-01-02 15:04:05 (default now)")
 	days := flag.Int("d", 365, "Valid days of the certificate, for example 365 (default 365 days)")
+	output := flag.String("o", "cert", "Folder for saving the certificate (default cert)")
 	flag.Parse()
 
-	if len(*host) == 0 {
-		fmt.Fprintf(os.Stderr, "The host parameter is required\n")
+	var hosts []string
+	for _, v := range strings.Split(*host, ",") {
+		v = strings.TrimSpace(v)
+		if v != "" {
+			hosts = append(hosts, v)
+		}
+	}
+
+	if len(hosts) == 0 {
+		flag.Usage()
 		os.Exit(1)
 	}
 
@@ -62,12 +71,24 @@ func main() {
 		var err error
 		notBefore, err = time.Parse("2006-01-02 15:04:05", *start)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to parse start parameter: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Failed to parse valid from parameter: %v\n", err)
 			os.Exit(1)
 		}
 	}
 
 	notAfter := notBefore.Add(time.Duration(*days) * 24 * time.Hour)
+
+	if len(*output) == 0 {
+		*output = "cert"
+	}
+
+	if _, err := os.Stat(*output); os.IsNotExist(err) {
+		err = os.MkdirAll(*output, 0755)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create output folder: %v\n", err)
+			os.Exit(1)
+		}
+	}
 
 	certificate, key, err := GenerateCertificate(Certificate{isCa: true, notBefore: notBefore, notAfter: notAfter})
 	if err != nil {
@@ -75,18 +96,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = WriteCertificate("ca", certificate, key)
+	err = WriteCertificate(fmt.Sprintf("%s/ca", *output), certificate, key)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to write ca certificate: %v\n", err)
 		os.Exit(1)
-	}
-
-	var hosts []string
-	for _, v := range strings.Split(*host, ",") {
-		v = strings.TrimSpace(v)
-		if v != "" {
-			hosts = append(hosts, v)
-		}
 	}
 
 	caCertificate, err := x509.ParseCertificates(certificate)
@@ -97,13 +110,13 @@ func main() {
 
 	certificate, key, err = GenerateCertificate(Certificate{isCa: false, hosts: hosts, caKey: key, caCertificate: caCertificate[0], notBefore: notBefore, notAfter: notAfter})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to generate host certificate: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to generate the certificate: %v\n", err)
 		os.Exit(1)
 	}
 
-	err = WriteCertificate("host", certificate, key)
+	err = WriteCertificate(fmt.Sprintf("%s/%s", *output, hosts[0]), certificate, key)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to write host certificate: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to write the certificate: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -137,9 +150,7 @@ func GenerateCertificate(c Certificate) ([]byte, *rsa.PrivateKey, error) {
 		c.caKey = key
 		c.caCertificate = &template
 	} else {
-		if len(c.hosts) > 0 {
-			template.Subject.CommonName = c.hosts[0]
-		}
+		template.Subject.CommonName = c.hosts[0]
 		template.KeyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
 		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
 	}
