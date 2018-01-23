@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2017 Li Kexian
+ * Copyright 2014-2018 Li Kexian
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 	"net"
 	"os"
@@ -90,25 +91,37 @@ func main() {
 		}
 	}
 
-	certificate, key, err := GenerateCertificate(Certificate{isCa: true, notBefore: notBefore, notAfter: notAfter})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to generate ca certificate: %v\n", err)
-		os.Exit(1)
+	var caCertificate []*x509.Certificate
+	var caKey *rsa.PrivateKey
+
+	caPath := fmt.Sprintf("%s/ca", *output)
+	if _, err := os.Stat(caPath + ".crt"); err == nil {
+		caCertificate, caKey, err = ReadCertificate(caPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to load ca certificate: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		certificate, caKey, err := GenerateCertificate(Certificate{isCa: true, notBefore: notBefore, notAfter: notAfter})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to generate ca certificate: %v\n", err)
+			os.Exit(1)
+		}
+
+		err = WriteCertificate(caPath, certificate, caKey)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to write ca certificate: %v\n", err)
+			os.Exit(1)
+		}
+
+		caCertificate, err = x509.ParseCertificates(certificate)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to parse ca certificate: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
-	err = WriteCertificate(fmt.Sprintf("%s/ca", *output), certificate, key)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to write ca certificate: %v\n", err)
-		os.Exit(1)
-	}
-
-	caCertificate, err := x509.ParseCertificates(certificate)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to parse ca certificate: %v\n", err)
-		os.Exit(1)
-	}
-
-	certificate, key, err = GenerateCertificate(Certificate{isCa: false, hosts: hosts, caKey: key, caCertificate: caCertificate[0], notBefore: notBefore, notAfter: notAfter})
+	certificate, key, err := GenerateCertificate(Certificate{isCa: false, hosts: hosts, caKey: caKey, caCertificate: caCertificate[0], notBefore: notBefore, notAfter: notAfter})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate the certificate: %v\n", err)
 		os.Exit(1)
@@ -171,6 +184,55 @@ func GenerateCertificate(c Certificate) ([]byte, *rsa.PrivateKey, error) {
 	return certificate, key, nil
 }
 
+// ReadCertificate reads certificate and key from files
+func ReadCertificate(name string) ([]*x509.Certificate, *rsa.PrivateKey, error) {
+	certificateName := fmt.Sprintf("%s.crt", name)
+	fd, err := os.Open(certificateName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	defer fd.Close()
+	data, err := ioutil.ReadAll(fd)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	p, _ := pem.Decode(data)
+	if p == nil {
+		return nil, nil, fmt.Errorf("The certificate is invalid")
+	}
+
+	certificate, err := x509.ParseCertificates(p.Bytes)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	keyName := fmt.Sprintf("%s.key", name)
+	fd, err = os.Open(keyName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	defer fd.Close()
+	data, err = ioutil.ReadAll(fd)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	p, _ = pem.Decode(data)
+	if p == nil {
+		return nil, nil, fmt.Errorf("The key is invalid")
+	}
+
+	key, err := x509.ParsePKCS1PrivateKey(p.Bytes)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return certificate, key, nil
+}
+
 // WriteCertificate writes certificate and key to files
 func WriteCertificate(name string, certificate []byte, key *rsa.PrivateKey) error {
 	certificateName := fmt.Sprintf("%s.crt", name)
@@ -179,11 +241,11 @@ func WriteCertificate(name string, certificate []byte, key *rsa.PrivateKey) erro
 		return err
 	}
 
+	defer fd.Close()
 	err = pem.Encode(fd, &pem.Block{Type: "CERTIFICATE", Bytes: certificate})
 	if err != nil {
 		return err
 	}
-	fd.Close()
 
 	keyName := fmt.Sprintf("%s.key", name)
 	fd, err = os.Create(keyName)
@@ -191,11 +253,11 @@ func WriteCertificate(name string, certificate []byte, key *rsa.PrivateKey) erro
 		return err
 	}
 
+	defer fd.Close()
 	err = pem.Encode(fd, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
 	if err != nil {
 		return err
 	}
-	fd.Close()
 
 	return nil
 }
