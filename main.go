@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2018 Li Kexian
+ * Copyright 2014-2019 Li Kexian
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,12 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		certificate, caKey, err := GenerateCertificate(Certificate{isCa: true, notBefore: notBefore, notAfter: notAfter})
+		caNotAfter := notBefore.Add(10 * 365 * 24 * time.Hour)
+		certificate, caKey, err := GenerateCertificate(Certificate{
+			isCa:      true,
+			notBefore: notBefore,
+			notAfter:  caNotAfter,
+		})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to generate ca certificate: %v\n", err)
 			os.Exit(1)
@@ -121,7 +126,14 @@ func main() {
 		}
 	}
 
-	certificate, key, err := GenerateCertificate(Certificate{isCa: false, hosts: hosts, caKey: caKey, caCertificate: caCertificate[0], notBefore: notBefore, notAfter: notAfter})
+	certificate, key, err := GenerateCertificate(Certificate{
+		isCa:          false,
+		hosts:         hosts,
+		caKey:         caKey,
+		caCertificate: caCertificate[0],
+		notBefore:     notBefore,
+		notAfter:      notAfter,
+	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate the certificate: %v\n", err)
 		os.Exit(1)
