@@ -93,6 +93,9 @@ func main() {
 
 	var caCertificate []*x509.Certificate
 	var caKey *rsa.PrivateKey
+	var certificate []byte
+	var key *rsa.PrivateKey
+	var err error
 
 	caPath := fmt.Sprintf("%s/ca", *output)
 	if _, err := os.Stat(caPath + ".crt"); err == nil {
@@ -103,7 +106,7 @@ func main() {
 		}
 	} else {
 		caNotAfter := notBefore.Add(10 * 365 * 24 * time.Hour)
-		certificate, caKey, err := GenerateCertificate(Certificate{
+		certificate, caKey, err = GenerateCertificate(Certificate{
 			isCa:      true,
 			notBefore: notBefore,
 			notAfter:  caNotAfter,
@@ -126,7 +129,7 @@ func main() {
 		}
 	}
 
-	certificate, key, err := GenerateCertificate(Certificate{
+	certificate, key, err = GenerateCertificate(Certificate{
 		isCa:          false,
 		hosts:         hosts,
 		caKey:         caKey,
