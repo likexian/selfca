@@ -1,5 +1,11 @@
 # SelfCA
 
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![GoDoc](https://godoc.org/github.com/likexian/selfca?status.svg)](https://godoc.org/github.com/likexian/selfca)
+[![Build Status](https://travis-ci.org/likexian/selfca.svg?branch=master)](https://travis-ci.org/likexian/selfca)
+[![Go Report Card](https://goreportcard.com/badge/github.com/likexian/selfca)](https://goreportcard.com/report/github.com/likexian/selfca)
+[![Code Cover](https://codecov.io/gh/likexian/selfca/graph/badge.svg)](https://codecov.io/gh/likexian/selfca)
+
 SelfCA is a Go module for self-signed certificate generating.
 
 ## Overview
