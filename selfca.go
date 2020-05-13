@@ -43,6 +43,21 @@ type Certificate struct {
 	CACertificate *x509.Certificate
 }
 
+// Version returns package version
+func Version() string {
+	return "v0.11.0"
+}
+
+// Author returns package author
+func Author() string {
+	return "[Li Kexian](https://www.likexian.com/)"
+}
+
+// License returns package license
+func License() string {
+	return "Licensed under the Apache License 2.0"
+}
+
 // GenerateCertificate generates X.509 certificate and key
 func GenerateCertificate(c Certificate) ([]byte, *rsa.PrivateKey, error) {
 	serialNumberMax := new(big.Int).Lsh(big.NewInt(1), 128)
@@ -85,12 +100,10 @@ func GenerateCertificate(c Certificate) ([]byte, *rsa.PrivateKey, error) {
 		}
 	}
 
-	certificate, err := x509.CreateCertificate(rand.Reader, &template, c.CACertificate, &key.PublicKey, c.CAKey)
-	if err != nil {
-		return nil, nil, err
-	}
+	certificate, err := x509.CreateCertificate(rand.Reader,
+		&template, c.CACertificate, &key.PublicKey, c.CAKey)
 
-	return certificate, key, nil
+	return certificate, key, err
 }
 
 // ReadCertificate reads certificate and key from files
