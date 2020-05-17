@@ -36,6 +36,7 @@ import (
 // Certificate stors certificate information for generating
 type Certificate struct {
 	IsCA          bool
+	CommonName    string
 	KeySize       int
 	NotBefore     time.Time
 	NotAfter      time.Time
@@ -46,7 +47,7 @@ type Certificate struct {
 
 // Version returns package version
 func Version() string {
-	return "v0.12.0"
+	return "v0.13.0"
 }
 
 // Author returns package author
@@ -95,6 +96,10 @@ func GenerateCertificate(c Certificate) ([]byte, *rsa.PrivateKey, error) {
 		template.Subject.CommonName = c.Hosts[0]
 		template.KeyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment
 		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
+	}
+
+	if c.CommonName != "" {
+		template.Subject.CommonName = c.CommonName
 	}
 
 	for _, v := range c.Hosts {

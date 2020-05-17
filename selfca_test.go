@@ -40,6 +40,7 @@ func TestGenerateCertificate(t *testing.T) {
 
 	config := Certificate{
 		IsCA:      true,
+		KeySize:   4096,
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(time.Duration(365) * 24 * time.Hour),
 	}
@@ -60,6 +61,7 @@ func TestGenerateCertificate(t *testing.T) {
 
 	config = Certificate{
 		IsCA:          false,
+		CommonName:    "likexian.com",
 		NotBefore:     time.Now(),
 		NotAfter:      time.Now().Add(time.Duration(365) * 24 * time.Hour),
 		Hosts:         []string{"127.0.0.1", "likexian.com"},

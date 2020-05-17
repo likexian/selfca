@@ -32,6 +32,7 @@ import (
 )
 
 func main() {
+	name := flag.String("n", "", "Common name of the certificate")
 	host := flag.String("h", "", "Domains or IPs of the certificate, comma separated")
 	bits := flag.Int("b", 2048, "Number of bits in the key to create (default 2048)")
 	start := flag.String("s", "", "Valid from of the certificate, formatted as 2006-01-02 15:04:05 (default now)")
@@ -119,6 +120,7 @@ func main() {
 
 	certificate, key, err = selfca.GenerateCertificate(selfca.Certificate{
 		IsCA:          false,
+		CommonName:    *name,
 		KeySize:       *bits,
 		NotBefore:     notBefore,
 		NotAfter:      notAfter,
