@@ -36,6 +36,7 @@ import (
 // Certificate stors certificate information for generating
 type Certificate struct {
 	IsCA          bool
+	KeySize       int
 	NotBefore     time.Time
 	NotAfter      time.Time
 	Hosts         []string
@@ -45,7 +46,7 @@ type Certificate struct {
 
 // Version returns package version
 func Version() string {
-	return "v0.11.0"
+	return "v0.12.0"
 }
 
 // Author returns package author
@@ -66,7 +67,11 @@ func GenerateCertificate(c Certificate) ([]byte, *rsa.PrivateKey, error) {
 		return nil, nil, err
 	}
 
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if c.KeySize <= 0 {
+		c.KeySize = 2048
+	}
+
+	key, err := rsa.GenerateKey(rand.Reader, c.KeySize)
 	if err != nil {
 		return nil, nil, err
 	}

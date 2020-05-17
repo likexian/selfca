@@ -33,6 +33,7 @@ import (
 
 func main() {
 	host := flag.String("h", "", "Domains or IPs of the certificate, comma separated")
+	bits := flag.Int("b", 2048, "Number of bits in the key to create (default 2048)")
 	start := flag.String("s", "", "Valid from of the certificate, formatted as 2006-01-02 15:04:05 (default now)")
 	days := flag.Int("d", 365, "Valid days of the certificate, for example 365 (default 365 days)")
 	output := flag.String("o", "cert", "Folder for saving the certificate (default cert)")
@@ -94,6 +95,7 @@ func main() {
 		caNotAfter := notBefore.Add(10 * 365 * 24 * time.Hour)
 		certificate, caKey, err = selfca.GenerateCertificate(selfca.Certificate{
 			IsCA:      true,
+			KeySize:   *bits,
 			NotBefore: notBefore,
 			NotAfter:  caNotAfter,
 		})
@@ -117,6 +119,7 @@ func main() {
 
 	certificate, key, err = selfca.GenerateCertificate(selfca.Certificate{
 		IsCA:          false,
+		KeySize:       *bits,
 		NotBefore:     notBefore,
 		NotAfter:      notAfter,
 		Hosts:         hosts,
