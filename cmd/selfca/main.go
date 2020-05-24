@@ -38,7 +38,14 @@ func main() {
 	start := flag.String("s", "", "Valid from of the certificate, formatted as 2006-01-02 15:04:05 (default now)")
 	days := flag.Int("d", 365, "Valid days of the certificate, for example 365 (default 365 days)")
 	output := flag.String("o", "cert", "Folder for saving the certificate (default cert)")
+	version := flag.Bool("v", false, "Show the selfca version")
 	flag.Parse()
+
+	if *version {
+		fmt.Println("selfca version " + selfca.Version())
+		fmt.Println(selfca.Author())
+		os.Exit(0)
+	}
 
 	var hosts []string
 	for _, v := range strings.Split(*host, ",") {
