@@ -1,5 +1,5 @@
 module github.com/likexian/selfca
 
-go 1.14
+go 1.15
 
-require github.com/likexian/gokit v0.23.3
+require github.com/likexian/gokit v0.24.0
