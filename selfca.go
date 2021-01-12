@@ -25,12 +25,20 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/big"
 	"net"
 	"os"
 	"time"
+)
+
+var (
+	// ErrInvalidCertificate is invalid certificate error
+	ErrInvalidCertificate = errors.New("selfca: the certificate is invalid")
+	// ErrInvalidCertificateKey is invalid certificate key error
+	ErrInvalidCertificateKey = errors.New("selfca: the certificate key is invalid")
 )
 
 // Certificate stors certificate information for generating
@@ -47,7 +55,7 @@ type Certificate struct {
 
 // Version returns package version
 func Version() string {
-	return "v0.13.3"
+	return "v0.14.0"
 }
 
 // Author returns package author
@@ -132,7 +140,7 @@ func ReadCertificate(name string) ([]*x509.Certificate, *rsa.PrivateKey, error) 
 
 	p, _ := pem.Decode(data)
 	if p == nil {
-		return nil, nil, fmt.Errorf("The certificate is invalid")
+		return nil, nil, ErrInvalidCertificate
 	}
 
 	certificate, err := x509.ParseCertificates(p.Bytes)
@@ -154,7 +162,7 @@ func ReadCertificate(name string) ([]*x509.Certificate, *rsa.PrivateKey, error) 
 
 	p, _ = pem.Decode(data)
 	if p == nil {
-		return nil, nil, fmt.Errorf("The key is invalid")
+		return nil, nil, ErrInvalidCertificateKey
 	}
 
 	key, err := x509.ParsePKCS1PrivateKey(p.Bytes)

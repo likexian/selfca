@@ -12,13 +12,13 @@ SelfCA is a Go module for self-signed certificate generating.
 
 Creating your own certificate authority and generating self-signed SSL certificates.
 
-You can directly using the binary distributions selfca, follow [selfca release tool](cmd/selfca).
+You can directly using the binary distributions of selfca, follow [selfca release tool](cmd/selfca).
 
 ## Features
 
 - Easy to use
 - No openssl required
-- Reuse CA certificate
+- Reuse of CA certificate
 
 ## Installation
 
