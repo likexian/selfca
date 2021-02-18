@@ -18,7 +18,7 @@ You can directly using the binary distributions of selfca, follow [selfca releas
 
 - Easy to use
 - No openssl required
-- Reuse of CA certificate
+- Reuse of CA root certificate
 
 ## Installation
 
