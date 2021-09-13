@@ -1,10 +1,10 @@
 # SelfCA
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![GoDoc](https://godoc.org/github.com/likexian/selfca?status.svg)](https://godoc.org/github.com/likexian/selfca)
-[![Build Status](https://travis-ci.org/likexian/selfca.svg?branch=master)](https://travis-ci.org/likexian/selfca)
+[![GoDoc](https://pkg.go.dev/badge/github.com/likexian/selfca.svg)](https://pkg.go.dev/github.com/likexian/selfca)
 [![Go Report Card](https://goreportcard.com/badge/github.com/likexian/selfca)](https://goreportcard.com/report/github.com/likexian/selfca)
-[![Code Cover](https://codecov.io/gh/likexian/selfca/graph/badge.svg)](https://codecov.io/gh/likexian/selfca)
+[![Build Status](https://github.com/likexian/selfca/actions/workflows/gotest.yaml/badge.svg)](https://github.com/likexian/selfca/actions/workflows/gotest.yaml)
+[![Code Cover](https://release.likexian.com/selfca/coverage.svg)](https://github.com/likexian/selfca/actions/workflows/gotest.yaml)
 
 SelfCA is a Go module for self-signed certificate generating.
 
@@ -36,7 +36,7 @@ import (
 
 ## Documentation
 
-Visit the docs on [GoDoc](https://godoc.org/github.com/likexian/selfca)
+Visit the docs on [GoDoc](https://pkg.go.dev/github.com/likexian/selfca)
 
 ## Example
 
@@ -45,7 +45,7 @@ Visit the docs on [GoDoc](https://godoc.org/github.com/likexian/selfca)
 config := selfca.Certificate{
     IsCA:          true,
     NotBefore:     time.Now(),
-    NotAfter:      time.Now().Add(time.Duration(365) * 24 * time.Hour),
+    NotAfter:      time.Now().Add(time.Duration(365*24) * time.Hour),
 }
 
 // generating the certificate
