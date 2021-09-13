@@ -72,7 +72,7 @@ func main() {
 		}
 	}
 
-	notAfter := notBefore.Add(time.Duration(*days) * 24 * time.Hour)
+	notAfter := notBefore.Add(time.Duration(*days*24) * time.Hour)
 
 	if len(*output) == 0 {
 		*output = "cert"

@@ -42,7 +42,7 @@ func TestGenerateCertificate(t *testing.T) {
 		IsCA:      true,
 		KeySize:   4096,
 		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(time.Duration(365) * 24 * time.Hour),
+		NotAfter:  time.Now().Add(time.Duration(365*24) * time.Hour),
 	}
 
 	certificate, key, err := GenerateCertificate(config)
@@ -63,7 +63,7 @@ func TestGenerateCertificate(t *testing.T) {
 		IsCA:          false,
 		CommonName:    "likexian.com",
 		NotBefore:     time.Now(),
-		NotAfter:      time.Now().Add(time.Duration(365) * 24 * time.Hour),
+		NotAfter:      time.Now().Add(time.Duration(365*24) * time.Hour),
 		Hosts:         []string{"127.0.0.1", "likexian.com"},
 		CAKey:         key,
 		CACertificate: caCertificate[0],
@@ -95,7 +95,7 @@ func TestReadWriteCertificate(t *testing.T) {
 	config := Certificate{
 		IsCA:      true,
 		NotBefore: time.Now(),
-		NotAfter:  time.Now().Add(time.Duration(365) * 24 * time.Hour),
+		NotAfter:  time.Now().Add(time.Duration(365*24) * time.Hour),
 	}
 
 	certificate, key, err := GenerateCertificate(config)
