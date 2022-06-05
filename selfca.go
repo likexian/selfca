@@ -55,7 +55,7 @@ type Certificate struct {
 
 // Version returns package version
 func Version() string {
-	return "v0.14.3"
+	return "v0.14.4"
 }
 
 // Author returns package author

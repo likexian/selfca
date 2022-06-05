@@ -10,12 +10,12 @@ SelfCA is released as a single binary file. Install selfca by unzipping it and m
 
 ### macOS
 
-- [64-bit](https://github.com/likexian/selfca/releases/latest/download/selfca-darwin-amd64.zip)
+- [64-bit](https://github.com/likexian/selfca/releases/latest/download/selfca-darwin-amd64.tar.gz)
 
 ### Linux
 
-- [64-bit](https://github.com/likexian/selfca/releases/latest/download/selfca-linux-amd64.zip)
-- [32-bit](https://github.com/likexian/selfca/releases/latest/download/selfca-linux-386.zip)
+- [64-bit](https://github.com/likexian/selfca/releases/latest/download/selfca-linux-amd64.tar.gz)
+- [32-bit](https://github.com/likexian/selfca/releases/latest/download/selfca-linux-386.tar.gz)
 
 ### Windows
 
