@@ -20,7 +20,6 @@
 package selfca
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -88,7 +87,7 @@ func TestReadWriteCertificate(t *testing.T) {
 	_ = os.Mkdir(certPath, 0755)
 	defer os.RemoveAll(certPath)
 
-	_ = ioutil.WriteFile(caPath+".crt", []byte("0"), 0644)
+	_ = os.WriteFile(caPath+".crt", []byte("0"), 0644)
 	_, _, err = ReadCertificate(caPath)
 	assert.NotNil(t, err)
 
@@ -108,7 +107,7 @@ func TestReadWriteCertificate(t *testing.T) {
 	_, _, err = ReadCertificate(caPath)
 	assert.NotNil(t, err)
 
-	_ = ioutil.WriteFile(caPath+".key", []byte("0"), 0644)
+	_ = os.WriteFile(caPath+".key", []byte("0"), 0644)
 	_, _, err = ReadCertificate(caPath)
 	assert.NotNil(t, err)
 }

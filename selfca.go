@@ -27,7 +27,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/big"
 	"net"
 	"os"
@@ -55,7 +55,7 @@ type Certificate struct {
 
 // Version returns package version
 func Version() string {
-	return "v0.14.7"
+	return "v0.14.8"
 }
 
 // Author returns package author
@@ -133,7 +133,7 @@ func ReadCertificate(name string) ([]*x509.Certificate, *rsa.PrivateKey, error) 
 	}
 
 	defer fd.Close()
-	data, err := ioutil.ReadAll(fd)
+	data, err := io.ReadAll(fd)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -155,7 +155,7 @@ func ReadCertificate(name string) ([]*x509.Certificate, *rsa.PrivateKey, error) 
 	}
 
 	defer fd.Close()
-	data, err = ioutil.ReadAll(fd)
+	data, err = io.ReadAll(fd)
 	if err != nil {
 		return nil, nil, err
 	}
