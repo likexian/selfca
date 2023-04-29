@@ -63,7 +63,7 @@ if err != nil {
 
 ## License
 
-Copyright 2014-2022 [Li Kexian](https://www.likexian.com/)
+Copyright 2014-2023 [Li Kexian](https://www.likexian.com/)
 
 Licensed under the Apache License 2.0
 

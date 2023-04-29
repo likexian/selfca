@@ -44,7 +44,7 @@ selfca -h likexian.com -s "2006-01-02 15:04:05" -d 3650
 
 ## License
 
-Copyright 2014-2022 [Li Kexian](https://www.likexian.com/)
+Copyright 2014-2023 [Li Kexian](https://www.likexian.com/)
 
 Licensed under the Apache License 2.0
 
